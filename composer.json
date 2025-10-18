@@ -1,0 +1,45 @@
+{
+    "name": "genit-io/chat-laravel",
+    "description": "Laravel package for chat feature management",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "chat",
+        "genit-io"
+    ],
+    "authors": [
+        {
+            "name": "Genit IO",
+            "email": "contact@genit.io"
+        }
+    ],
+    "require": {
+        "php": "^8.1|^8.2|^8.3",
+        "illuminate/support": "^10.0|^11.0",
+        "illuminate/database": "^10.0|^11.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0",
+        "phpunit/phpunit": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "GenitIo\\Chat\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "GenitIo\\Chat\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "GenitIo\\Chat\\ChatServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
