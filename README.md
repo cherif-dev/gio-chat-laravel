@@ -85,6 +85,62 @@ return [
 
 ## Usage
 
+### Web Routes
+
+The package provides built-in web routes for contact management that require authentication:
+
+#### Create Contact
+
+Create a contact UUID for the authenticated user:
+
+```
+POST /chat/contact
+```
+
+Response (201 Created):
+
+```json
+{
+  "message": "Contact created successfully.",
+  "contact_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+Response when contact already exists (409 Conflict):
+
+```json
+{
+  "message": "User already has a contact.",
+  "contact_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+#### Get Contact
+
+Get the authenticated user's contact UUID:
+
+```
+GET /chat/contact
+```
+
+Response (200 OK):
+
+```json
+{
+  "contact_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+Response when user has no contact (404 Not Found):
+
+```json
+{
+  "message": "User does not have a contact."
+}
+```
+
+**Note:** These routes require the `web` and `auth` middleware. The user must be authenticated to use them.
+
 ### Using the Facade
 
 Add the facade to your class:
@@ -123,11 +179,11 @@ $chatId = Contact::getContactId(userId: 1);
 #### Create Contact
 
 ```php
-// Create a contact for the user
+// Create a contact for the user (auto-generates UUID)
 $contact = Contact::createContact(userId: 1);
 
-// Create contact with specific chat ID
-$contact = Contact::createContact(userId: 1, chatId: 'your-uuid-here');
+// Create contact with specific contact ID (UUID)
+$contact = Contact::createContact(userId: 1, contactId: 'your-uuid-here');
 ```
 
 #### Delete Contact
@@ -145,13 +201,13 @@ use GenitIo\Chat\Models\Contact;
 // Get user's contact
 $contact = Contact::where('user_id', 1)->first();
 
-// Access chat_id (UUID)
-echo $contact->chat_id;
+// Access contact_id (UUID)
+echo $contact->contact_id;
 
 // Create contact
 $contact = Contact::create([
     'user_id' => 1,
-    'chat_id' => 'your-uuid-here', // optional
+    'contact_id' => 'your-uuid-here', // optional, auto-generated if not provided
 ]);
 ```
 
@@ -173,7 +229,7 @@ class ContactController extends Controller
 
         return response()->json([
             'contact_id' => $contact?->id,
-            'chat_id' => $contact?->chat_id,
+            'contact_uuid' => $contact?->contact_id,
         ]);
     }
 
@@ -181,7 +237,7 @@ class ContactController extends Controller
     {
         $contact = $this->chatService->createContact(
             userId: $request->user()->id,
-            chatId: $request->input('chat_id')
+            contactId: $request->input('contact_id')
         );
 
         return response()->json($contact);
@@ -230,11 +286,11 @@ Then you can use:
 ```php
 $user = User::find(1);
 
-// Create contact
-$contact = $user->createContact();
+// Create contact with auto-generated UUID
+$contact = $user->createContact(Str::uuid()->toString());
 
-// Get chat ID
-$chatId = $user->getChatId();
+// Get contact ID (UUID)
+$contactId = $user->getChatId();
 
 // Check if user has contact
 if ($user->hasContact()) {
@@ -243,4 +299,5 @@ if ($user->hasContact()) {
 
 // Access contact relationship
 $contact = $user->contact;
+echo $contact->contact_id; // UUID
 ```

@@ -9,10 +9,10 @@ use Illuminate\Support\Str;
 
 class Contact extends Model
 {
-    protected $table = 'genit_io_contact';
+    protected $table = 'genit_io_contacts';
 
     protected $fillable = [
-        'chat_id',
+        'contact_id',
         'user_id',
     ];
 
@@ -21,6 +21,16 @@ class Contact extends Model
     protected static function boot()
     {
         parent::boot();
+    }
+
+    /**
+     * Get the route key for the model.
+     *
+     * @return string
+     */
+    public function getRouteKeyName()
+    {
+        return 'contact_id';
     }
 
     public function user(): BelongsTo
