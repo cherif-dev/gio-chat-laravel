@@ -44,7 +44,7 @@ return [
     | Configuration for communicating with the genit.io microservice.
     |
     */
-    'base_url' => env('GENIT_IO_API_BASE_URL', 'https://gio-admin.test'),
+    'base_url' => env('GENIT_IO_API_BASE_URL', 'https://io.genitlabs.com'),
     'project' => env('GENIT_IO_PROJECT'),
     'project_api_key' => env('GENIT_IO_PROJECT_API_KEY'),
     'timeout' => env('GENIT_IO_API_TIMEOUT', 30), // seconds
