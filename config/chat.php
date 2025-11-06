@@ -45,8 +45,6 @@ return [
     |
     */
     'base_url' => env('GENIT_IO_API_BASE_URL', 'https://gio-admin.test'),
-    'supabase_url' => env('SUPABASE_URL', 'http://localhost:8000'),
-    'supabase_anon_key' => env('SUPABASE_ANON_KEY', ''),
     'project' => env('GENIT_IO_PROJECT'),
     'project_api_key' => env('GENIT_IO_PROJECT_API_KEY'),
     'timeout' => env('GENIT_IO_API_TIMEOUT', 30), // seconds
