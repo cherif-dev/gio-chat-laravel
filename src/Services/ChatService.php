@@ -40,19 +40,19 @@ class ChatService
 
         return DB::transaction(function () use ($userId, $user) {
             // Create contact in Genit IO API first
-            $genitIoResponse = $this->apiClient->createContact($user->toContactData());
-
+            $userContacData = $user->toContactData();
+            $genitIoResponse = $this->apiClient->createContact($userContacData);
             // Extract contact_id from Genit IO response
             $createdContact = $genitIoResponse['contact'];
             $contact_uuid = $createdContact['uuid'] ?? null;
-
+            $project_slug = $createdContact['project']['slug'] ?? null;
             if (!$contact_uuid) {
                 throw new GenitIoApiException('Genit IO API did not return a contact ID');
             }
-
             // Store contact locally
             return Contact::create([
                 'user_id' => $userId,
+                'project_slug' => $project_slug,
                 'contact_id' => $contact_uuid,
             ]);
         });

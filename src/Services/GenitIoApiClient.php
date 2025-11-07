@@ -29,6 +29,19 @@ class GenitIoApiClient
         $this->verifySsl = config('chat.verify_ssl', true);
         $this->validateConfiguration();
     }
+    /**
+     * Get the project configuration.
+     *
+     * @return array
+     * @throws \RuntimeException
+     */
+    public function getProjectConfig(): array
+    {
+        return [
+            'url' => $this->baseUrl . '/api/v1/' . $this->project,
+            'key' => $this->apiKey,
+        ];
+    }
 
     /**
      * Validate that required configuration is present.
@@ -81,15 +94,14 @@ class GenitIoApiClient
     public function createContact(array $data): array
     {
         try {
+
             $response = $this->client()
                 ->post("/api/v1/{$this->project}/contacts", $data);
 
             $this->logRequest('POST', "/api/v1/{$this->project}/contacts", $data, $response);
-
             if ($response->successful()) {
                 return $response->json();
             }
-
             throw $this->createException($response, 'Failed to create contact in Genit IO');
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             $this->logError('Connection error while creating contact', $e, $data);

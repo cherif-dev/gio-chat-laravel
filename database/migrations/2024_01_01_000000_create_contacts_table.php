@@ -13,12 +13,14 @@ return new class extends Migration
     {
         Schema::create('genit_io_contacts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
-            $table->uuid('contact_id')->unique();
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->string('project_slug');
+            $table->uuid('contact_id');
             $table->timestamps();
 
             $table->index('contact_id');
-            $table->unique(['user_id', 'contact_id']);
+            $table->index('project_slug');
+            $table->unique(['user_id', 'project_slug', 'contact_id']);
         });
     }
 

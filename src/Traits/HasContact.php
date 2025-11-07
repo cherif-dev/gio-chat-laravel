@@ -10,13 +10,18 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 trait HasContact
 {
 
+    public function genit_io_project(): string
+    {
+        return config('chat.project');
+    }
 
     /**
      * Get the user's contact.
      */
     public function contact(): HasOne
     {
-        return $this->hasOne(Contact::class, 'user_id');
+        $project = $this->genit_io_project();
+        return $this->hasOne(Contact::class, 'user_id')->where('project_slug', $project);
     }
 
     /**
