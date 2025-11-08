@@ -11,6 +11,7 @@ use GenitIo\Chat\Exceptions\GenitIoApiException;
 class GenitIoApiClient
 {
     protected string $baseUrl;
+    protected string $origin;
     protected string $project;
     protected string $apiKey;
     protected int $timeout;
@@ -20,6 +21,7 @@ class GenitIoApiClient
 
     public function __construct()
     {
+        $this->origin = config('app.url');
         $this->baseUrl = config('chat.base_url');
         $this->project = config('chat.project');
         $this->apiKey = config('chat.project_api_key');
@@ -71,6 +73,7 @@ class GenitIoApiClient
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
                 'X-API-Key' => $this->apiKey,
+                'Origin' => $this->origin,
             ])
             ->timeout($this->timeout)
             ->retry($this->retryTimes, $this->retryDelay, function ($exception, $request) {
