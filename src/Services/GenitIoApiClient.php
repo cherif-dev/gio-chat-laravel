@@ -7,6 +7,8 @@ use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use GenitIo\Chat\Exceptions\GenitIoApiException;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 
 class GenitIoApiClient
 {
@@ -40,7 +42,8 @@ class GenitIoApiClient
     public function getProjectConfig(): array
     {
         return [
-            'url' => $this->baseUrl . '/api/v1/' . $this->project,
+            'url' => $this->origin . '/genit-io-chat/' . $this->project,
+            'base_url' => $this->baseUrl . '/api/v1/' . $this->project,
             'key' => $this->apiKey,
         ];
     }
@@ -86,6 +89,45 @@ class GenitIoApiClient
                 return $client->withoutVerifying();
             });
     }
+
+    /**
+     * Get the config from the Genit IO project.
+     *
+     * @return array Response data from Genit IO API
+     * @throws GenitIoApiException
+     */
+    public function getConfig(): array
+    {
+        try {
+            $response = $this->client()
+                ->get("/api/v1/{$this->project}/config");
+
+            $this->logRequest('GET', "/api/v1/{$this->project}/config", [], $response);
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+
+            throw $this->createException($response, 'Failed to get contact from Genit IO');
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            $this->logError('Connection error while getting contact', $e);
+            throw new GenitIoApiException(
+                'Unable to connect to Genit IO API: ' . $e->getMessage(),
+                0,
+                $e
+            );
+        } catch (GenitIoApiException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            $this->logError('Unexpected error while getting contact', $e);
+            throw new GenitIoApiException(
+                'Unexpected error communicating with Genit IO API: ' . $e->getMessage(),
+                0,
+                $e
+            );
+        }
+    }
+
 
     /**
      * Create a contact in the Genit IO system.
@@ -288,46 +330,107 @@ class GenitIoApiClient
 
 
 
+
+
+
     /**
-     * Get conversations for a contact from the Genit IO system.
+     * Send the request to the API and handle errors.
      *
-     * @param string $contactId Contact ID
-     * @param string|null $participantId Optional participant ID to filter conversations
-     * @return array Response data from Genit IO API
      * @throws GenitIoApiException
      */
-    public function getConversation(string $contactId, string $participantId): array
+    protected function sendRequest(string $method, string $endpoint, array $payloadOrQuery): Response
     {
+        $httpMethod = strtoupper($method);
+        $requestData = $payloadOrQuery;
+
         try {
-            $endpoint = "/api/v1/{$this->project}/chat/{$contactId}/{$participantId}";
+            $client = $this->client();
 
-
-            $response = $this->client()->get($endpoint);
-
-            $this->logRequest('GET', $endpoint, [], $response);
-
-            if ($response->successful()) {
-                $response = $response->json();
-                return $response['conversation'];
+            switch ($httpMethod) {
+                case 'GET':
+                    $response = $client->get($endpoint, $payloadOrQuery);
+                    break;
+                case 'POST':
+                    $response = $client->post($endpoint, $payloadOrQuery);
+                    break;
+                case 'PUT':
+                    $response = $client->put($endpoint, $payloadOrQuery);
+                    break;
+                case 'PATCH':
+                    $response = $client->patch($endpoint, $payloadOrQuery);
+                    break;
+                case 'DELETE':
+                    $response = $client->delete($endpoint, $payloadOrQuery);
+                    break;
+                default:
+                    throw new \InvalidArgumentException("Unsupported HTTP method [{$httpMethod}]");
             }
 
-            throw $this->createException($response, 'Failed to get conversation from Genit IO');
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            $this->logError('Connection error while getting conversation', $e);
+            $this->logRequest($httpMethod, $endpoint, $requestData, $response);
+
+            return $response;
+        } catch (ConnectionException $exception) {
+            $this->logError("Connection error during {$httpMethod} {$endpoint}", $exception, $payloadOrQuery);
             throw new GenitIoApiException(
-                'Unable to connect to Genit IO API: ' . $e->getMessage(),
+                'Unable to connect to Genit IO API: ' . $exception->getMessage(),
                 0,
-                $e
+                $exception
             );
-        } catch (GenitIoApiException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            $this->logError('Unexpected error while getting conversation', $e);
+        } catch (RequestException $exception) {
+            $response = $exception->response;
+            if ($response) {
+                $this->logRequest($httpMethod, $endpoint, $requestData, $response);
+                throw $this->createException($response, 'Genit IO API request failed');
+            }
+
+            $this->logError("Request error during {$httpMethod} {$endpoint}", $exception, $payloadOrQuery);
             throw new GenitIoApiException(
-                'Unexpected error communicating with Genit IO API: ' . $e->getMessage(),
+                'Unexpected error communicating with Genit IO API: ' . $exception->getMessage(),
                 0,
-                $e
+                $exception
+            );
+        } catch (GenitIoApiException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            $this->logError("Unexpected error during {$httpMethod} {$endpoint}", $exception, $payloadOrQuery);
+            throw new GenitIoApiException(
+                'Unexpected error communicating with Genit IO API: ' . $exception->getMessage(),
+                0,
+                $exception
             );
         }
+    }
+
+    /**
+     * Perform an HTTP request that returns JSON.
+     *
+     * @throws GenitIoApiException
+     */
+    protected function requestJson(string $method, string $endpoint, array $payloadOrQuery, string $errorMessage): array
+    {
+        $response = $this->sendRequest($method, $endpoint, $payloadOrQuery);
+        if ($response->successful()) {
+            $json = $response->json();
+
+            return is_array($json) ? $json : [];
+        }
+
+        throw $this->createException($response, $errorMessage);
+    }
+
+    /**
+     * Perform an HTTP request that returns a boolean on success.
+     *
+     * @throws GenitIoApiException
+     */
+    protected function requestBoolean(string $method, string $endpoint, array $payload, string $errorMessage): bool
+    {
+        $response = $this->sendRequest($method, $endpoint, $payload);
+
+        if ($response->successful()) {
+            return true;
+        }
+
+        throw $this->createException($response, $errorMessage);
     }
 }

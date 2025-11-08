@@ -6,6 +6,7 @@ use GenitIo\Chat\Models\Contact;
 use GenitIo\Chat\Services\ChatService;
 use GenitIo\Chat\Services\GenitIoApiClient;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Log;
 
 trait HasContact
 {
@@ -43,17 +44,29 @@ trait HasContact
     /**
      * Get or create the user's contact UUID.
      */
-    public function getOrCreateContactUuid()
+    public function getOrCreateContactUuid(): ?string
     {
-        $contact = null;
-        if (!$this->hasContact()) {
-            $contact = app(ChatService::class)->createContact($this);
-        } else {
-            $contact = $this->contact;
+        try {
+            $c = null;
+            if (!$this->hasContact()) {
+                $c = app(ChatService::class)->createContact($this);
+                if (!$c) {
+                    throw new \Exception('Contact ID is null');
+                }
+                Log::info('Contact created', ['contact_id' => $c->contact_id]);
+                return $c->contact_id;
+            } else {
+                $c = $this->contact()->first();
+                if (!$c) {
+                    Log::warning('Contact expected but not found', ['user_id' => $this->getKey(), 'project' => $this->genit_io_project()]);
+                    return null;
+                }
+                Log::info('Contact found', ['contact_id' => $c->contact_id]);
+                return $c->contact_id;
+            }
+        } catch (\Throwable $th) {
+            Log::error('Error getting or creating contact: ', [$th]);
+            return null;
         }
-        if (!$contact) {
-            throw new \Exception('User has no contact');
-        }
-        return $contact->contact_id;
     }
 }

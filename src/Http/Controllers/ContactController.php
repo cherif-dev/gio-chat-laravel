@@ -22,7 +22,7 @@ class ContactController extends Controller
     /**
      * Create a contact for the authenticated user in Genit IO.
      */
-    public function create(Request $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
         $user = $request->user();
 

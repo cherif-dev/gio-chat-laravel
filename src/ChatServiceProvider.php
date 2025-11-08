@@ -2,7 +2,9 @@
 
 namespace GenitIo\Chat;
 
+use GenitIo\Chat\Services\ChatApiClient;
 use GenitIo\Chat\Services\ChatService;
+use GenitIo\Chat\Services\ConversationApiClient;
 use GenitIo\Chat\Services\GenitIoApiClient;
 use Illuminate\Support\ServiceProvider;
 
@@ -20,6 +22,7 @@ class ChatServiceProvider extends ServiceProvider
 
         // Load routes
         $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
+        $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
 
         // Publish migrations
         if ($this->app->runningInConsole()) {
@@ -50,6 +53,16 @@ class ChatServiceProvider extends ServiceProvider
         // Register the GenitIoApiClient as a singleton
         $this->app->singleton('api.genit.io', function ($app) {
             return new GenitIoApiClient();
+        });
+
+        // Register the ConversationApiClient as a singleton
+        $this->app->singleton(ConversationApiClient::class, function ($app) {
+            return new ConversationApiClient();
+        });
+
+        // Register the ChatApiClient as a singleton
+        $this->app->singleton(ChatApiClient::class, function ($app) {
+            return new ChatApiClient();
         });
 
         // Register the ChatService as a singleton
