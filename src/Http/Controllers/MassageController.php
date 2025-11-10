@@ -53,7 +53,7 @@ class MassageController extends Controller
     public function store(Request $request, string $project, string $conversation): JsonResponse
     {
         $validated = $request->validate([
-            'sender_id' => 'required|string',
+            'sender_uuid' => 'required|string',
             'type' => 'required|string|in:text,image,audio,video,document,location,contact,sticker,buttons,list,interactive,reaction,call,link,custom',
             'content' => 'nullable|string',
             'body' => 'nullable|string',
